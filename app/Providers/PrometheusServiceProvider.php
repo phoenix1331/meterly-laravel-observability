@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Prometheus\Collectors\PlanMixCollector;
+use App\Prometheus\Collectors\QuotaBurnCollector;
+use App\Prometheus\Collectors\RevenueRateCollector;
 use App\Prometheus\FixedLaravelCacheAdapter;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
@@ -29,6 +32,7 @@ class PrometheusServiceProvider extends ServiceProvider
     {
         $this->registerHorizonCollectors();
         $this->registerQueueCollectors(['default']);
+        $this->registerBusinessCollectors();
 
         // Works around a bug in spatie/laravel-prometheus 1.6.1: its
         // LaravelCacheAdapter::collect() fetches stored metrics but never
@@ -69,6 +73,17 @@ class PrometheusServiceProvider extends ServiceProvider
             QueueReservedJobsCollector::class,
             QueueOldestPendingJobCollector::class,
         ], compact('connection', 'queues'));
+
+        return $this;
+    }
+
+    public function registerBusinessCollectors(): self
+    {
+        Prometheus::registerCollectorClasses([
+            QuotaBurnCollector::class,
+            PlanMixCollector::class,
+            RevenueRateCollector::class,
+        ]);
 
         return $this;
     }
