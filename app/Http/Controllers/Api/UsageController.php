@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\FraudCheckFailedException;
 use App\Http\Controllers\Controller;
 use App\Models\ApiKey;
 use App\Models\Tenant;
 use App\Models\UsageEvent;
+use App\Services\FraudCheckService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UsageController extends Controller
 {
+    public function __construct(
+        private readonly FraudCheckService $fraudCheck,
+    ) {}
+
     /**
      * Record a usage event for the authenticated tenant.
      */
@@ -23,6 +29,12 @@ class UsageController extends Controller
 
         /** @var ApiKey $apiKey */
         $apiKey = $request->attributes->get('apiKey');
+
+        try {
+            $this->fraudCheck->check($tenant);
+        } catch (FraudCheckFailedException) {
+            return response()->json(['message' => 'Upstream fraud check failed.'], 502);
+        }
 
         $event = UsageEvent::create([
             'tenant_id' => $tenant->id,

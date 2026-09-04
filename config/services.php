@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'fraud_check' => [
+        // Simulated latency for the stubbed fraud-check dependency, in milliseconds.
+        'latency_ms' => (int) env('FRAUD_CHECK_LATENCY_MS', 50),
+
+        // Fraction of calls that fail, from 0.0 (never) to 1.0 (always).
+        'error_rate' => (float) env('FRAUD_CHECK_ERROR_RATE', 0.0),
+    ],
+
 ];
