@@ -38,6 +38,22 @@ services:
       redis:
         condition: service_healthy
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - .:/app
+    environment:
+      - DB_HOST=mysql
+      - REDIS_HOST=redis
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   mysql:
     image: mysql:8.4
     ports:
