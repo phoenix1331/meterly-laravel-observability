@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AttachTraceId;
 use App\Http\Middleware\AuthenticateApiKey;
 use App\Http\Middleware\EnforceUsageQuota;
 use App\Http\Middleware\RecordRequestMetrics;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'usage-quota' => EnforceUsageQuota::class,
         ]);
 
+        $middleware->appendToGroup('api', AttachTraceId::class);
         $middleware->appendToGroup('api', RecordRequestMetrics::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

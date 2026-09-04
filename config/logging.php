@@ -1,5 +1,7 @@
 <?php
 
+use App\Logging\TraceIdProcessor;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -109,8 +111,8 @@ return [
             'handler_with' => [
                 'stream' => 'php://stderr',
             ],
-            'formatter' => env('LOG_STDERR_FORMATTER'),
-            'processors' => [PsrLogMessageProcessor::class],
+            'formatter' => JsonFormatter::class,
+            'processors' => [PsrLogMessageProcessor::class, TraceIdProcessor::class],
         ],
 
         'syslog' => [

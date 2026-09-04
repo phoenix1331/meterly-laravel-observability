@@ -19,4 +19,4 @@ RUN install-php-extensions \
 
 COPY . /app
 
-CMD ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=8000"]
+CMD ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=8000", "--log-level=info"]

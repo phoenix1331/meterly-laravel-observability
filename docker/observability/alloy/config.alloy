@@ -41,3 +41,50 @@ loki.write "default" {
 		url = "http://loki:3100/loki/api/v1/push"
 	}
 }
+
+// Discover and tail the app's own containers via the Docker socket, so
+// structured JSON logs written to stderr end up in Loki with the same
+// trace_id that ties them to their span in Tempo.
+discovery.docker "containers" {
+	host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+	targets = discovery.docker.containers.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/laravel-meterly-(app|horizon|scheduler)-.*"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/laravel-meterly-([a-z]+)-.*"
+		target_label  = "service"
+	}
+}
+
+loki.source.docker "containers" {
+	host       = "unix:///var/run/docker.sock"
+	targets    = discovery.relabel.containers.output
+	forward_to = [loki.process.containers.receiver]
+}
+
+loki.process "containers" {
+	stage.json {
+		expressions = {
+			trace_id = "extra.trace_id",
+			level    = "level_name",
+		}
+	}
+
+	stage.labels {
+		values = {
+			trace_id = "",
+			level    = "",
+		}
+	}
+
+	forward_to = [loki.write.default.receiver]
+}

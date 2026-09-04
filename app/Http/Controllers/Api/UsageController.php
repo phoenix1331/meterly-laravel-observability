@@ -12,6 +12,7 @@ use App\Models\UsageEvent;
 use App\Services\FraudCheckService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class UsageController extends Controller
 {
@@ -32,7 +33,12 @@ class UsageController extends Controller
 
         try {
             $this->fraudCheck->check($tenant);
-        } catch (FraudCheckFailedException) {
+        } catch (FraudCheckFailedException $exception) {
+            Log::warning('Fraud check failed for usage event.', [
+                'tenant_id' => $tenant->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
             return response()->json(['message' => 'Upstream fraud check failed.'], 502);
         }
 
@@ -41,6 +47,12 @@ class UsageController extends Controller
             'api_key_id' => $apiKey->id,
             'endpoint' => $request->path(),
             'created_at' => now(),
+        ]);
+
+        Log::info('Usage event recorded.', [
+            'tenant_id' => $tenant->id,
+            'usage_event_id' => $event->id,
+            'endpoint' => $event->endpoint,
         ]);
 
         return response()->json([
