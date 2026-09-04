@@ -1,4 +1,4 @@
-.PHONY: help up down build shell migrate seed test logs fresh demo
+.PHONY: help up down build shell migrate seed test logs fresh demo horizon-logs
 
 help: ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "%-10s %s\n", $$1, $$2}'
@@ -26,6 +26,9 @@ test: ## run the test suite
 
 logs: ## tail the app container logs
 	@docker compose logs -f app
+
+horizon-logs: ## tail the horizon queue worker logs
+	@docker compose logs -f horizon
 
 fresh: ## drop all tables and re-migrate with seed data
 	@docker compose exec app php artisan migrate:fresh --seed
