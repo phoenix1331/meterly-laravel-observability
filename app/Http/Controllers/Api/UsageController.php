@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\ApiKey;
+use App\Models\Tenant;
+use App\Models\UsageEvent;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class UsageController extends Controller
+{
+    /**
+     * Record a usage event for the authenticated tenant.
+     */
+    public function __invoke(Request $request): JsonResponse
+    {
+        /** @var Tenant $tenant */
+        $tenant = $request->attributes->get('tenant');
+
+        /** @var ApiKey $apiKey */
+        $apiKey = $request->attributes->get('apiKey');
+
+        $event = UsageEvent::create([
+            'tenant_id' => $tenant->id,
+            'api_key_id' => $apiKey->id,
+            'endpoint' => $request->path(),
+            'created_at' => now(),
+        ]);
+
+        return response()->json([
+            'id' => $event->id,
+            'tenant' => $tenant->name,
+            'recorded_at' => $event->created_at,
+        ], 201);
+    }
+}

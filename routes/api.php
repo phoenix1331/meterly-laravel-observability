@@ -2,13 +2,9 @@
 
 declare(strict_types=1);
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\UsageController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api-key')->group(function (): void {
-    Route::get('/ping', function (Request $request) {
-        return response()->json([
-            'tenant' => $request->attributes->get('tenant')->name,
-        ]);
-    });
+    Route::post('/usage', UsageController::class);
 });
