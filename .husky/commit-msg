@@ -1,0 +1,15 @@
+MSG_FILE="$1"
+MSG=$(cat "$MSG_FILE")
+
+if echo "$MSG" | grep -q '[A-Z]'; then
+  echo "error: commit message must be entirely lowercase"
+  exit 1
+fi
+
+PATTERN="^(feat|fix|chore|refactor|style|test|perf|ci|build|revert): .+"
+if ! echo "$MSG" | grep -qE "$PATTERN"; then
+  echo "error: commit message must follow conventional commits format"
+  echo "  e.g. feat: add login endpoint"
+  echo "  scopes in brackets are not allowed, e.g. chore(install): ... is forbidden"
+  exit 1
+fi
