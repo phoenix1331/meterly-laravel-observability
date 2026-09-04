@@ -26,4 +26,21 @@ class Tenant extends Model
     {
         return $this->hasMany(ApiKey::class);
     }
+
+    public function usageEvents(): HasMany
+    {
+        return $this->hasMany(UsageEvent::class);
+    }
+
+    public function usageThisMonth(): int
+    {
+        return $this->usageEvents()
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+    }
+
+    public function hasExceededQuota(): bool
+    {
+        return $this->usageThisMonth() >= $this->plan->monthly_quota;
+    }
 }
