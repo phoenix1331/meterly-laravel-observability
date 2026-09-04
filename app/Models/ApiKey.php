@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\ApiKeyFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
+#[Fillable(['tenant_id', 'name', 'prefix', 'hash', 'last_used_at', 'revoked_at'])]
+#[Hidden(['hash'])]
 class ApiKey extends Model
 {
     /** @use HasFactory<ApiKeyFactory> */
     use HasFactory;
-
-    protected $hidden = ['hash'];
 
     protected function casts(): array
     {

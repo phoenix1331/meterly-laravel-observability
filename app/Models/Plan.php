@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\PlanFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['name', 'slug', 'monthly_quota', 'price_pence'])]
 class Plan extends Model
 {
     /** @use HasFactory<PlanFactory> */
