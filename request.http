@@ -1,0 +1,21 @@
+@baseUrl = http://localhost:8000
+
+### Usage
+
+# Records a usage event for the tenant that owns the API key.
+# Demo key seeded by DemoSeeder, on the Free plan (quota 1,000/month).
+POST {{baseUrl}}/api/usage
+Authorization: Bearer mtly_demo0000_demo0000000000000000000000000000000001
+
+###
+
+# No Authorization header. The api-key middleware rejects this before
+# it reaches the controller.
+POST {{baseUrl}}/api/usage
+
+###
+
+# Seeded by DemoSeeder on a Demo Tiny plan (quota 1/month) that already
+# has one usage event recorded, so this call is always over quota.
+POST {{baseUrl}}/api/usage
+Authorization: Bearer mtly_demo0001_demo0000000000000000000000000000000002
