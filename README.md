@@ -87,12 +87,14 @@ All artisan/composer commands run inside the container. `npm install` is not req
 |---|---|
 | `http://localhost:8000` | The app |
 | `http://localhost:8000/api/usage` | The metered endpoint (see `request.http`) |
-| `http://localhost:8000/horizon` | Horizon dashboard |
+| `http://localhost:8000/horizon` | Horizon dashboard, has its own UI |
 | `http://localhost:8000/prometheus` | Raw metrics scrape endpoint |
 | `http://localhost:3000` | Grafana - "Meterly" dashboard, anonymous access |
-| `http://localhost:9090` | Prometheus |
-| `http://localhost:3100` | Loki |
-| `http://localhost:3200` | Tempo |
+| `http://localhost:9090` | Prometheus, has its own UI (query, `/targets`, `/alerts`) |
+| `http://localhost:3100` | Loki - API only, no browsable UI |
+| `http://localhost:3200` | Tempo - API only, no browsable UI |
+
+Loki and Tempo have no web UI of their own: their data is only ever viewed through Grafana, either the provisioned dashboard's logs panel or Explore (pick the Loki or Tempo datasource, then query `{service="app"}` or paste a trace ID). Visiting `:3100` or `:3200` directly in a browser returns a 404 on `/`, that's expected, not a broken service, use `/ready` to check health instead.
 
 ## Environment variables
 
