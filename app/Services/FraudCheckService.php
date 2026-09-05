@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Exceptions\FraudCheckFailedException;
 use App\Models\Tenant;
+use App\Support\FraudCheckSettings;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerInterface;
@@ -20,6 +21,7 @@ class FraudCheckService
 {
     public function __construct(
         private readonly TracerInterface $tracer,
+        private readonly FraudCheckSettings $settings,
     ) {}
 
     public function check(Tenant $tenant): bool
@@ -32,13 +34,13 @@ class FraudCheckService
         $scope = $span->activate();
 
         try {
-            $latencyMs = config('services.fraud_check.latency_ms');
+            $latencyMs = $this->settings->latencyMs();
 
             if ($latencyMs > 0) {
                 usleep($latencyMs * 1_000);
             }
 
-            $errorRate = config('services.fraud_check.error_rate');
+            $errorRate = $this->settings->errorRate();
 
             if ($errorRate > 0 && (mt_rand() / mt_getrandmax()) < $errorRate) {
                 $exception = new FraudCheckFailedException("Fraud check failed for tenant {$tenant->id}.");
