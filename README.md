@@ -1,5 +1,8 @@
 # Meterly
 
+<img width="3172" height="1676" alt="Screenshot 2026-09-05 131338" src="https://github.com/user-attachments/assets/0371564c-ae26-4e0e-b3dd-7e3953a8841f" />
+
+
 A usage-metered API platform on Laravel 13 that demonstrates production observability end to end. Metrics, logs, and traces flow into Prometheus, Loki, and Tempo with correlated trace IDs, so a scripted incident can be followed from a Grafana alert to the exact trace and log line, all running locally with one command.
 
 ## What this demonstrates
