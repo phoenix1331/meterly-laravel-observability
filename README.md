@@ -29,11 +29,11 @@ This is a deliberately thin, complete slice, not the full brief. Everything belo
 - One background job (`AggregateUsageEvents`) on Horizon, scheduled daily and runnable on demand, with a heartbeat used for absence alerting
 - One stubbed external dependency (`FraudCheckService`) with env-configured latency/error rate, plus a runtime override so the traffic simulator can script an incident without restarting anything
 - Metrics (Prometheus), logs (Loki via Alloy), and traces (Tempo via OpenTelemetry) all flowing, with the same trace ID on the HTTP response header, every log line, and the trace itself
-- The correlation triangle: Prometheus exemplars (via Tempo's span-metrics), Grafana derived fields (log → trace), and Tempo's trace-to-logs (trace → log) — all three legs verified by hand against real data, not just configured
+- The correlation triangle: Prometheus exemplars (via Tempo's span-metrics), Grafana derived fields (log to trace), and Tempo's trace-to-logs (trace to log), all three legs verified by hand against real data, not just configured
 - A traffic simulator with a diurnal (sine-wave) request rate and one scripted incident, wired into `make demo`
 - One provisioned Grafana dashboard covering technical and business signals, one provisioned alert group (sustained error-rate + job-staleness/absence), both as code under `docker/observability/`
 
-**Not implemented** (see [Extending it](#extending-it) below): Sentry/GlitchTip error tracking, outbound webhooks with retries, Stripe usage sync, 30-day backfilled history, Mimir and object storage. These are the brief's "after the thin slice" chapters — each adds a genuinely new observability lesson rather than just more application surface, so they're deliberately deferred rather than half-built.
+**Not implemented** (see [Extending it](#extending-it) below): Sentry/GlitchTip error tracking, outbound webhooks with retries, Stripe usage sync, 30-day backfilled history, Mimir and object storage. These are the brief's "after the thin slice" chapters, each adding a genuinely new observability lesson rather than just more application surface, so they're deliberately deferred rather than half-built.
 
 ## Tech stack
 
@@ -41,7 +41,7 @@ This is a deliberately thin, complete slice, not the full brief. Everything belo
 - **MySQL 8.4**, **Redis 7** (queues via **Horizon**, cache)
 - **OpenTelemetry PHP SDK** for tracing, exported via OTLP/HTTP to **Alloy**
 - **spatie/laravel-prometheus** for the metrics endpoint (with a local patch, see [Architecture notes](#architecture-notes))
-- **Prometheus**, **Loki**, **Tempo**, **Alloy** (collector), **Grafana** — all provisioned as code
+- **Prometheus**, **Loki**, **Tempo**, **Alloy** (collector), **Grafana**, all provisioned as code
 - **Docker Compose** for the full local stack; no cloud accounts or paid tiers
 
 ## Getting started
@@ -49,14 +49,14 @@ This is a deliberately thin, complete slice, not the full brief. Everything belo
 ### Prerequisites
 
 - Docker and Docker Compose
-- [`osv-scanner`](https://github.com/google/osv-scanner) installed locally (`go install github.com/google/osv-scanner/cmd/osv-scanner@latest`) — required by the pre-commit hook
+- [`osv-scanner`](https://github.com/google/osv-scanner) installed locally (`go install github.com/google/osv-scanner/cmd/osv-scanner@latest`), required by the pre-commit hook
 - `make`
 
 ### First run
 
 ```bash
-git clone <this-repo>
-cd laravel-meterly
+git clone https://github.com/phoenix1331/meterly-laravel-observability.git
+cd meterly-laravel-observability
 cp .env.example .env
 make demo
 ```
@@ -89,7 +89,7 @@ All artisan/composer commands run inside the container. `npm install` is not req
 | `http://localhost:8000/api/usage` | The metered endpoint (see `request.http`) |
 | `http://localhost:8000/horizon` | Horizon dashboard |
 | `http://localhost:8000/prometheus` | Raw metrics scrape endpoint |
-| `http://localhost:3000` | Grafana — "Meterly" dashboard, anonymous access |
+| `http://localhost:3000` | Grafana - "Meterly" dashboard, anonymous access |
 | `http://localhost:9090` | Prometheus |
 | `http://localhost:3100` | Loki |
 | `http://localhost:3200` | Tempo |
@@ -113,7 +113,7 @@ All artisan/composer commands run inside the container. `npm install` is not req
 
 ## Endpoints / request.http
 
-`request.http` at the project root covers three cases against `POST /api/usage`: a successful call (using a fixed, seeded demo key), an unauthenticated call (401), and a quota-exceeded call (429). The demo keys are intentionally committed plaintext — they're fixtures seeded by `DemoSeeder`, not secrets — so the file is runnable immediately after `make fresh` with no setup.
+`request.http` at the project root covers three cases against `POST /api/usage`: a successful call (using a fixed, seeded demo key), an unauthenticated call (401), and a quota-exceeded call (429). The demo keys are intentionally committed plaintext, since they're fixtures seeded by `DemoSeeder`, not secrets, so the file is runnable immediately after `make fresh` with no setup.
 
 Real API keys are never retrievable after creation: `ApiKey::generateToken()` returns the plaintext once, only a SHA-256 hash and a short prefix are stored.
 
@@ -123,23 +123,23 @@ Real API keys are never retrievable after creation: `ApiKey::generateToken()` re
 
 **Why `TraceIdProcessor` resolves its dependency lazily.** Laravel's `LogManager` caches built Monolog channels for the life of an Octane worker, not per-request. A constructor-injected `TraceContext` would keep the first request's trace ID forever; the processor resolves it fresh from the container on every log line instead.
 
-**Why the Prometheus histogram doesn't carry exemplars directly.** `promphp/prometheus_client_php` (used by `spatie/laravel-prometheus`) has no exemplar support in its histogram or text-exposition renderer. The correlation triangle uses Tempo's span-metrics (`traces_spanmetrics_latency_bucket`, derived from real spans and remote-written to Prometheus with exemplars) instead — an independent, fully working path to the same chart-to-trace click-through.
+**Why the Prometheus histogram doesn't carry exemplars directly.** `promphp/prometheus_client_php` (used by `spatie/laravel-prometheus`) has no exemplar support in its histogram or text-exposition renderer. The correlation triangle uses Tempo's span-metrics (`traces_spanmetrics_latency_bucket`, derived from real spans and remote-written to Prometheus with exemplars) instead, an independent, fully working path to the same chart-to-trace click-through.
 
 **`FixedLaravelCacheAdapter`.** `spatie/laravel-prometheus` 1.6.1's Redis/database-cache storage adapter has a bug: `collect()` fetches stored metrics but never assigns them back before rendering, so every scrape came back empty. `app/Prometheus/FixedLaravelCacheAdapter.php` is a small subclass that fixes this, rebound in `PrometheusServiceProvider`.
 
 **Prometheus label naming.** `job` is reserved by Prometheus's scrape config; a custom metric label with that name gets silently renamed to `exported_job` at ingestion. The job-heartbeat gauge uses `job_name` to avoid the collision.
 
-**Gauges don't disappear.** The underlying Prometheus client has no way to remove a gauge's stored value for a label set once it's been set — a job that stops running just freezes at its last value rather than vanishing, which makes a pure `absent()` alert unreliable after the first successful run. `JobHeartbeatCollector` always emits a value (a large sentinel for "never run"), and the alert rule checks staleness rather than absence.
+**Gauges don't disappear.** The underlying Prometheus client has no way to remove a gauge's stored value for a label set once it's been set, so a job that stops running just freezes at its last value rather than vanishing, which makes a pure `absent()` alert unreliable after the first successful run. `JobHeartbeatCollector` always emits a value (a large sentinel for "never run"), and the alert rule checks staleness rather than absence.
 
 ## Extending it
 
 The brief's "after the thin slice" chapters, in the order they'd add the most:
 
-1. **Sentry / GlitchTip error tracking** — add `sentry/sentry-laravel` pointed at a local GlitchTip instance (four containers, ~512MB, API/DSN-compatible with Sentry). Propagate the same trace ID already flowing through `TraceContext` so an exception in Sentry links straight to its Tempo trace and Loki logs — the wiring for this already exists, only the Sentry SDK integration is missing.
-2. **Outbound webhooks with retries and a dead letter queue** — a new queued job pattern, giving a second, more realistic failure mode (retry-storm dashboards) to instrument the same way `AggregateUsageEvents` is instrumented now.
-3. **Stripe usage sync** — a second scheduled job following the `JobHeartbeat` pattern already used for the aggregation job, giving a second absence-alerting example tied to a business-critical (revenue) failure mode.
-4. **30-day backfilled history** — seed `UsageAggregate` rows across a longer date range to make week-over-week dashboard panels meaningful; the aggregation job already supports backfilling a specific date via `--date`.
-5. **Mimir and object storage** — swap Prometheus's local storage for Mimir once local disk becomes the constraint; out of scope for a laptop-sized demo.
+1. **Sentry / GlitchTip error tracking**: add `sentry/sentry-laravel` pointed at a local GlitchTip instance (four containers, ~512MB, API/DSN-compatible with Sentry). Propagate the same trace ID already flowing through `TraceContext` so an exception in Sentry links straight to its Tempo trace and Loki logs; the wiring for this already exists, only the Sentry SDK integration is missing.
+2. **Outbound webhooks with retries and a dead letter queue**: a new queued job pattern, giving a second, more realistic failure mode (retry-storm dashboards) to instrument the same way `AggregateUsageEvents` is instrumented now.
+3. **Stripe usage sync**: a second scheduled job following the `JobHeartbeat` pattern already used for the aggregation job, giving a second absence-alerting example tied to a business-critical (revenue) failure mode.
+4. **30-day backfilled history**: seed `UsageAggregate` rows across a longer date range to make week-over-week dashboard panels meaningful; the aggregation job already supports backfilling a specific date via `--date`.
+5. **Mimir and object storage**: swap Prometheus's local storage for Mimir once local disk becomes the constraint; out of scope for a laptop-sized demo.
 
 ## License
 

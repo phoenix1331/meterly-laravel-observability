@@ -22,6 +22,11 @@ services:
       retries: 10
       start_period: 10s
 
+  # Runs AggregateUsageEvents (and any other queued job) off Redis.
+  # healthcheck disabled: the FrankenPHP base image's inherited
+  # healthcheck pings Caddy's admin port, which is never listening here
+  # since this container runs `artisan horizon`, not the web server.
+  # Left enabled it always reports unhealthy despite working correctly.
   horizon:
     build:
       context: .
@@ -40,6 +45,12 @@ services:
     healthcheck:
       disable: true
 
+  # Drives routes/console.php's Schedule:: entries. Without this
+  # process running, `Schedule::command('app:aggregate-usage')` never
+  # actually fires; Laravel's scheduler is inert without something
+  # calling `artisan schedule:run` every minute, which is what
+  # `schedule:work` does in a loop. Same healthcheck reasoning as
+  # horizon above.
   scheduler:
     build:
       context: .
@@ -87,6 +98,13 @@ services:
       timeout: 5s
       retries: 10
 
+  # --web.enable-remote-write-receiver: lets Tempo's metrics-generator
+  # push span-derived metrics here (see tempo.yml's remote_write block),
+  # off by default in Prometheus 3.x.
+  # --enable-feature=exemplar-storage: without this, exemplars arriving
+  # via remote-write are silently discarded even though the write itself
+  # succeeds; this is what makes the correlation triangle's metric-to-
+  # trace exemplar link work at all.
   prometheus:
     image: prom/prometheus:v3.0.1
     command:
@@ -136,6 +154,11 @@ services:
       prometheus:
         condition: service_healthy
 
+  # The one collector: receives traces over OTLP (4317 gRPC, 4318 HTTP;
+  # the app uses HTTP, see OTEL_EXPORTER_OTLP_* in .env.example) and
+  # separately tails Docker container logs via the mounted socket (see
+  # config.alloy's discovery.docker block) to push structured logs to
+  # Loki. Two unrelated collection paths in one process.
   alloy:
     image: grafana/alloy:v1.5.1
     command:
@@ -148,6 +171,9 @@ services:
       - "4318:4318"
     volumes:
       - ./docker/observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      # Read-only Docker socket access, so Alloy can discover and tail
+      # the app/horizon/scheduler containers' own log streams directly.
+      # The app never talks to Loki itself.
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       prometheus:
@@ -157,6 +183,10 @@ services:
       tempo:
         condition: service_healthy
 
+  # Anonymous admin access is deliberate, not a security oversight: the
+  # brief's target is `git clone && make demo` to a populated dashboard
+  # with no accounts, in under fifteen minutes. Never do this for a
+  # deployment reachable outside localhost.
   grafana:
     image: grafana/grafana:11.4.0
     ports:

@@ -12,6 +12,9 @@ use Spatie\Prometheus\Facades\Prometheus;
  * Monthly recurring revenue in pence, from each tenant's plan price.
  * Labelled by plan slug so the dashboard can break revenue down by tier
  * as well as show the total.
+ *
+ * Pence, not pounds/decimal: avoids floating-point rounding in a
+ * revenue number, same reasoning as plans.price_pence itself.
  */
 class RevenueRateCollector implements Collector
 {

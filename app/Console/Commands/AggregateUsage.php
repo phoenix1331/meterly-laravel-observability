@@ -10,6 +10,13 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
+/**
+ * On-demand entry point for AggregateUsageEvents, the same job the
+ * daily schedule (routes/console.php) and Horizon run, just invoked
+ * synchronously here so `--date` backfills finish (and surface errors)
+ * before the command returns, rather than being queued and processed
+ * later by a worker.
+ */
 #[Signature('app:aggregate-usage {--date= : Date to aggregate, defaults to today (Y-m-d)}')]
 #[Description('Roll up raw usage events into per-tenant daily totals')]
 class AggregateUsage extends Command

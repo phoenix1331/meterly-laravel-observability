@@ -27,6 +27,20 @@ use Spatie\Prometheus\Collectors\Queue\QueueReservedJobsCollector;
 use Spatie\Prometheus\Collectors\Queue\QueueSizeCollector;
 use Spatie\Prometheus\Facades\Prometheus;
 
+/**
+ * Registers every Prometheus gauge/counter/histogram collector the app
+ * exposes at GET /prometheus (route registered by the spatie package
+ * itself, see config/prometheus.php). Three groups: Horizon's own
+ * collectors (ships with the package), queue depth for the 'default'
+ * queue, and this app's own business-metric collectors under
+ * app/Prometheus/Collectors.
+ *
+ * The request/latency counters in RecordRequestMetrics aren't
+ * registered here: that middleware writes straight to the
+ * CollectorRegistry on every request rather than through a
+ * once-at-boot Collector, since a value() closure re-evaluated at
+ * scrape time wouldn't capture per-request data the way a gauge can.
+ */
 class PrometheusServiceProvider extends ServiceProvider
 {
     public function register(): void

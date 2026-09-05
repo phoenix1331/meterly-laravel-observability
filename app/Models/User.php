@@ -10,6 +10,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * Laravel's default scaffolded model, unused by this app: every actor
+ * here is a Tenant authenticated by ApiKey, not a logged-in User. Left
+ * in place because the framework's session/auth config still expects
+ * it to exist, but nothing in app/ references it.
+ */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable

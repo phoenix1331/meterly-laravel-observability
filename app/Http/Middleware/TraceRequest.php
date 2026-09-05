@@ -16,6 +16,13 @@ use Symfony\Component\HttpFoundation\Response;
  * Opens the root span for the request, so every span created downstream
  * (the fraud check, the queued aggregation job when dispatched from a
  * request) nests underneath it in the same trace.
+ *
+ * First of three middleware appended to the 'api' group in
+ * bootstrap/app.php (TraceRequest, then AttachTraceId, then
+ * RecordRequestMetrics). Appended-first runs outermost, so this one
+ * wraps the whole request including the two behind it, which is why
+ * TraceContext already holds the real span ID by the time AttachTraceId
+ * reads it.
  */
 class TraceRequest
 {

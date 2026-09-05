@@ -1,3 +1,10 @@
+// Pipeline 1: OTLP traces from the app (see TracingServiceProvider,
+// OTEL_EXPORTER_OTLP_ENDPOINT in .env.example). The app only ever sends
+// traces here. The metrics/logs outputs below exist for completeness with
+// the OTLP receiver's shape but nothing in this app currently sends
+// metrics or logs over OTLP; Prometheus scrapes /prometheus directly
+// (see prometheus.yml) and logs arrive via the Docker discovery
+// pipeline further down instead.
 otelcol.receiver.otlp "default" {
 	grpc {
 		endpoint = "0.0.0.0:4317"
@@ -13,6 +20,7 @@ otelcol.receiver.otlp "default" {
 	}
 }
 
+// Forwards received traces to Tempo over its own OTLP gRPC port.
 otelcol.exporter.otlp "tempo" {
 	client {
 		endpoint = "tempo:4317"
@@ -42,9 +50,11 @@ loki.write "default" {
 	}
 }
 
-// Discover and tail the app's own containers via the Docker socket, so
-// structured JSON logs written to stderr end up in Loki with the same
-// trace_id that ties them to their span in Tempo.
+// Pipeline 2: discover and tail the app's own containers via the Docker
+// socket, so structured JSON logs written to stderr (config/logging.php's
+// stderr channel) end up in Loki with the same trace_id that ties them
+// to their span in Tempo. Separate from pipeline 1 above: the app
+// never pushes logs itself, Alloy pulls them from Docker.
 discovery.docker "containers" {
 	host = "unix:///var/run/docker.sock"
 }
@@ -52,12 +62,19 @@ discovery.docker "containers" {
 discovery.relabel "containers" {
 	targets = discovery.docker.containers.targets
 
+	// Only these three containers run app code and write JSON logs;
+	// everything else Docker discovers (mysql, redis, grafana itself,
+	// ...) is skipped rather than ingested and immediately discarded
+	// downstream.
 	rule {
 		source_labels = ["__meta_docker_container_name"]
 		regex         = "/laravel-meterly-(app|horizon|scheduler)-.*"
 		action        = "keep"
 	}
 
+	// "service" becomes the Loki label the dashboard's logs panel and
+	// Grafana's derived-field trace link both query against
+	// ({service="app"}, see the datasources.yml and meterly.json).
 	rule {
 		source_labels = ["__meta_docker_container_name"]
 		regex         = "/laravel-meterly-([a-z]+)-.*"
@@ -71,6 +88,11 @@ loki.source.docker "containers" {
 	forward_to = [loki.process.containers.receiver]
 }
 
+// Promotes two JSON fields to real Loki labels (queryable, not just
+// grep-able text): trace_id (from TraceIdProcessor's extra.trace_id)
+// is what makes Tempo's trace-to-logs "filterByTraceID" work (see the
+// Tempo datasource's tracesToLogsV2 config), and level supports
+// filtering the dashboard's logs panel by severity.
 loki.process "containers" {
 	stage.json {
 		expressions = {

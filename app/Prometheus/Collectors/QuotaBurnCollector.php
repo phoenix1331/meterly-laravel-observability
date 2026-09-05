@@ -12,6 +12,10 @@ use Spatie\Prometheus\Facades\Prometheus;
  * Fraction of the monthly quota each tenant has burnt, from 0.0 to 1.0+.
  * Labelled by tenant ID and plan slug: both are bounded by the number of
  * tenants and plans, so cardinality stays safe.
+ *
+ * Deliberately calls Tenant::usageThisMonth(), the same method
+ * EnforceUsageQuota uses to block a request, so this gauge and that
+ * real-time check can never disagree about what "burnt" means.
  */
 class QuotaBurnCollector implements Collector
 {

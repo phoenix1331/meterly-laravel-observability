@@ -10,6 +10,19 @@ use App\Models\Tenant;
 use App\Models\UsageEvent;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeds two fixed-key tenants request.http and the "quota-exceeded"
+ * demo case both depend on. Real API keys can't be seeded with a known
+ * plaintext (ApiKey::generateToken() is the only place the plaintext
+ * ever exists, by design). DEMO_KEY/EXHAUSTED_KEY below are hashed
+ * here the same way generateToken() would, but the plaintext constant
+ * itself is what request.http hard-codes as a Bearer token.
+ *
+ * updateOrCreate + delete-then-recreate throughout, not firstOrCreate:
+ * idempotent across repeated `db:seed` runs without `migrate:fresh`,
+ * and the exhausted tenant's single UsageEvent is what makes it
+ * reliably over-quota on every fresh run, not just the first.
+ */
 class DemoSeeder extends Seeder
 {
     /**

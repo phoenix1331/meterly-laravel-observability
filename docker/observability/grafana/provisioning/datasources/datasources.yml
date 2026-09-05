@@ -1,6 +1,17 @@
+# The three legs of the correlation triangle live here, one block each.
+# All three uids are hand-set (not Grafana-generated) so they're stable
+# and referenceable from the other two blocks and from meterly.json.
+# Do not remove a uid when editing, the cross-references break silently.
 apiVersion: 1
 
 datasources:
+  # Leg 1: metric -> trace. exemplarTraceIdDestinations tells Grafana
+  # that a "trace_id" exemplar label on a Prometheus series is a link to
+  # a Tempo trace. The app's own histogram can't carry exemplars (see
+  # README's Architecture notes on promphp/prometheus_client_php's
+  # limitation). This leg only works because Tempo's own
+  # metrics-generator remote-writes traces_spanmetrics_latency_bucket
+  # with exemplars attached (see tempo.yml).
   - name: Prometheus
     type: prometheus
     access: proxy
@@ -12,6 +23,11 @@ datasources:
         - name: trace_id
           datasourceUid: tempo
 
+  # Leg 2: log -> trace. matcherRegex is deliberately a JSON-substring
+  # match, not a `trace_id=xxx` pattern: Loki stores each raw log line
+  # as-is (see alloy/config.alloy's loki.process stage), and the app's
+  # JSON logs put trace_id under extra.trace_id (see TraceIdProcessor),
+  # so the line always contains the literal substring "trace_id":"...".
   - name: Loki
     type: loki
     access: proxy
@@ -24,6 +40,9 @@ datasources:
           name: TraceID
           url: "$${__value.raw}"
 
+  # Leg 3: trace -> log. filterByTraceID relies on trace_id being a real
+  # Loki *label*, not just JSON text. That promotion happens in
+  # alloy/config.alloy's loki.process stage.labels block, not here.
   - name: Tempo
     type: tempo
     access: proxy

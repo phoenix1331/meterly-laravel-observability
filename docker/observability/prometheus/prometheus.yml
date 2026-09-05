@@ -5,6 +5,10 @@ global:
 rule_files:
   - /etc/prometheus/alert_rules.yml
 
+# No Alertmanager is wired up in this thin slice. Alert state (firing/
+# pending/inactive) is fully queryable at :9090/api/v1/rules and visible
+# in Prometheus's own UI, which is enough to verify the alerting story
+# without adding a fifth service just to route notifications nowhere.
 alerting:
   alertmanagers:
     - static_configs:
@@ -19,6 +23,10 @@ scrape_configs:
     static_configs:
       - targets: ["alloy:12345"]
 
+  # /prometheus, not /metrics: spatie/laravel-prometheus's default route
+  # name (see config/prometheus.php's 'urls' key); matching this to the
+  # actual route was a real bug caught during the metrics task, not a
+  # convention to assume.
   - job_name: meterly
     metrics_path: /prometheus
     static_configs:

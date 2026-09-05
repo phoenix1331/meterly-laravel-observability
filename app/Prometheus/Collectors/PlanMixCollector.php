@@ -10,6 +10,11 @@ use Spatie\Prometheus\Facades\Prometheus;
 
 /**
  * Tenant count per plan. Labelled by plan slug, a small fixed set.
+ *
+ * One of three business-metric collectors alongside QuotaBurnCollector
+ * and RevenueRateCollector, registered together in
+ * PrometheusServiceProvider::registerBusinessCollectors(). Each is
+ * small enough that a shared base class would cost more than it saves.
  */
 class PlanMixCollector implements Collector
 {

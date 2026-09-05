@@ -104,6 +104,13 @@ return [
             'processors' => [PsrLogMessageProcessor::class],
         ],
 
+        // This is LOG_CHANNEL's default (see .env.example). JSON to
+        // stderr is what Alloy tails via the Docker socket and ships to
+        // Loki, see docker/observability/alloy/config.alloy's
+        // loki.source.docker block. Requires the app container's CMD to
+        // pass --log-level to octane:frankenphp, or these lines get
+        // swallowed by Octane's own log interception; see the README's
+        // Architecture notes for why.
         'stderr' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),

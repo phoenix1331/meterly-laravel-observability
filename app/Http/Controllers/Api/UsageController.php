@@ -14,6 +14,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * The one metered endpoint (POST /api/usage). By the time this runs,
+ * api-key and usage-quota route middleware have already authenticated
+ * the tenant and rejected an over-quota request, so this only has to
+ * handle the one external dependency (fraud check) and write the row
+ * that everything else in the system (the quota check, the
+ * aggregation job, the business metrics) reads back from.
+ */
 class UsageController extends Controller
 {
     public function __construct(

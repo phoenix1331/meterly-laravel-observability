@@ -18,6 +18,10 @@ return new class extends Migration
             $table->unsignedBigInteger('request_count');
             $table->timestamps();
 
+            // Makes AggregateUsageEvents' updateOrCreate() an upsert on
+            // (tenant_id, date): re-running the job for a day already
+            // aggregated recomputes that one row instead of inserting a
+            // duplicate.
             $table->unique(['tenant_id', 'date']);
         });
     }

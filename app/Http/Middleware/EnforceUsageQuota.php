@@ -9,6 +9,13 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Second of two route-level middleware on /api/usage (aliased
+ * 'usage-quota'), runs after AuthenticateApiKey so 'tenant' is already
+ * on the request. Reuses Tenant::hasExceededQuota() rather than
+ * re-deriving the ratio here, so this check and QuotaBurnCollector's
+ * metric can never disagree about what "over quota" means.
+ */
 class EnforceUsageQuota
 {
     /**

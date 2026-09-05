@@ -21,6 +21,10 @@ class PlanFactory extends Factory
     {
         return [
             'name' => ucfirst($this->faker->unique()->word()).' Plan',
+            // A closure here (rather than a plain value) can read the
+            // other attributes already resolved above it, so the slug
+            // always matches this specific name instead of being
+            // independently randomised.
             'slug' => fn (array $attributes) => str($attributes['name'])->slug(),
             'monthly_quota' => $this->faker->randomElement([1_000, 10_000, 100_000, 1_000_000]),
             'price_pence' => $this->faker->randomElement([0, 2_900, 9_900, 29_900]),

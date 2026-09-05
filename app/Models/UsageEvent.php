@@ -10,6 +10,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * One recorded call to the metered endpoint. Written by UsageController
+ * on every successful request; read back by Tenant::usageThisMonth()
+ * for the live quota check and by AggregateUsageEvents for the daily
+ * rollup into UsageAggregate. Append-only: never updated after
+ * creation, hence no updated_at column.
+ */
 #[Fillable(['tenant_id', 'api_key_id', 'endpoint', 'created_at'])]
 class UsageEvent extends Model
 {

@@ -11,6 +11,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * A customer of the metered API. The unit everything else hangs off:
+ * one plan, one or more API keys, a stream of usage events.
+ *
+ * usageThisMonth()/hasExceededQuota() are shared by EnforceUsageQuota
+ * (blocks a request in real time) and QuotaBurnCollector (reports the
+ * same ratio as a Prometheus gauge) so both read the same definition
+ * of "burnt".
+ */
 #[Fillable(['plan_id', 'name', 'email'])]
 class Tenant extends Model
 {

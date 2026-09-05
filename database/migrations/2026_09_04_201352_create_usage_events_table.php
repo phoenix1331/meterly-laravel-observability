@@ -18,6 +18,11 @@ return new class extends Migration
             $table->string('endpoint');
             $table->timestamp('created_at');
 
+            // Every read of this table filters by tenant + a date range:
+            // Tenant::usageThisMonth() (the live quota check),
+            // AggregateUsageEvents (the daily rollup), QuotaBurnCollector.
+            // A single-column index on either alone wouldn't serve the
+            // combined filter as efficiently.
             $table->index(['tenant_id', 'created_at']);
         });
     }

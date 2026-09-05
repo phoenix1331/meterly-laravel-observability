@@ -14,10 +14,22 @@ use Illuminate\Support\Carbon;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerInterface;
 
+/**
+ * Stands in for the brief's "nightly billing close": the one background
+ * job in this thin slice, queued on Horizon and scheduled daily at
+ * 00:05 (routes/console.php). Also runnable synchronously via
+ * `php artisan app:aggregate-usage`.
+ *
+ * Calls JobHeartbeat::recordSuccess() on completion so
+ * JobHeartbeatCollector can expose "seconds since this last succeeded"
+ * as a Prometheus gauge, the metric UsageAggregationJobStale alerts on
+ * when the close silently stops running, not just when it errors.
+ */
 class AggregateUsageEvents implements ShouldQueue
 {
     use Queueable;
 
+    /** Matches the label JobHeartbeatCollector reads back and the alert rule filters on. */
     public const HEARTBEAT_NAME = 'usage_aggregation';
 
     /**

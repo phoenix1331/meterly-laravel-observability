@@ -74,6 +74,9 @@ class SimulateTraffic extends Command
 
             $token = $tokens[array_rand($tokens)];
 
+            // 201 success, 401 an occasional stale/deleted key, 429 quota
+            // exceeded (expected once a tenant burns through a small plan),
+            // 502 the scripted incident. Anything else is a real bug.
             Http::withToken($token, 'Bearer')
                 ->timeout(5)
                 ->post("{$baseUrl}/api/usage")

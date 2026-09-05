@@ -22,6 +22,12 @@ compactor:
   compaction:
     block_retention: 48h
 
+# Derives Prometheus metrics from every span Tempo receives and
+# remote-writes them, exemplars attached. This is what produces
+# traces_spanmetrics_latency_bucket (see prometheus.yml and the
+# Grafana dashboard) and is the entire mechanism behind the
+# metric-to-trace leg of the correlation triangle, since the app's own
+# Prometheus histogram can't carry exemplars itself.
 metrics_generator:
   registry:
     external_labels:
@@ -35,4 +41,7 @@ metrics_generator:
 overrides:
   defaults:
     metrics_generator:
+      # span-metrics: produces traces_spanmetrics_* (latency, calls,
+      # size). service-graphs: produces traces_service_graph_* for
+      # Grafana's node graph panel.
       processors: [service-graphs, span-metrics]

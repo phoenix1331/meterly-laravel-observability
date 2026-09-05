@@ -9,6 +9,14 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * First of two route-level middleware on /api/usage (aliased 'api-key',
+ * registered before 'usage-quota' in routes/api.php, since EnforceUsageQuota
+ * needs the tenant this resolves). Looks the bearer token up by its
+ * SHA-256 hash, not the plaintext, since only the hash is ever stored.
+ * Sets 'tenant' and 'apiKey' request attributes that every downstream
+ * middleware and the controller read.
+ */
 class AuthenticateApiKey
 {
     /**

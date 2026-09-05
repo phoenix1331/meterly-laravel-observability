@@ -58,5 +58,15 @@ return [
      *  'cache' => null       // InMemory implementation without laravel cache
      *  'cache' => 'array'    // InMemory implementation using laravel cache
      */
+    // Must be a real shared store, not 'array' or null: Octane keeps
+    // one PHP process alive across many requests, and under Horizon
+    // there's a second, entirely separate process too. Without a store
+    // both processes actually share, each would report only its own
+    // slice of traffic instead of the whole app's metrics.
+    //
+    // If you change what this metric family's labels() call returns,
+    // clear the FixedLaravelCacheAdapter's cached metadata (see its
+    // docblock): the label set is cached on first registration and
+    // does not auto-refresh, which is a real gotcha this app hit once.
     'cache' => 'redis',
 ];

@@ -17,6 +17,10 @@ use Symfony\Component\HttpFoundation\Response;
  * status, and tenant ID (bounded by the number of tenants). A request
  * ID or any other unbounded value must never become a label here, or
  * it will blow up cardinality in Prometheus.
+ *
+ * Third of three middleware appended to the 'api' group (see
+ * TraceRequest). Runs innermost, so $duration below covers only the
+ * actual route handling, not the other two middleware's own overhead.
  */
 class RecordRequestMetrics
 {

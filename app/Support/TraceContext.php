@@ -7,12 +7,21 @@ namespace App\Support;
 use Illuminate\Support\Str;
 
 /**
- * Holds the current request's trace ID so every log line can carry it.
+ * Holds the current request's trace ID so every log line can carry it
+ * (see TraceIdProcessor) and so it can be echoed back on the response
+ * (see AttachTraceId).
  *
- * Until real OpenTelemetry spans exist, this generates a request-scoped
- * correlation ID. Once tracing is wired up, the span's own trace ID
- * should be set here instead, so log-to-trace correlation in Grafana
- * keeps working without a log format change.
+ * TraceRequest sets the real OpenTelemetry trace ID here as soon as it
+ * opens the request's root span. The lazy id()/Str::ulid() fallback
+ * below only fires for code paths that log without ever going through
+ * TraceRequest: an artisan command, a queue worker outside a request.
+ * So a log line still gets *some* stable correlation ID even without a
+ * trace behind it.
+ *
+ * Bound scoped() in AppServiceProvider, so each Octane request gets its
+ * own instance. Must be resolved fresh per read, never cached in a
+ * constructor that outlives the request: see TraceIdProcessor's
+ * docblock for what goes wrong if you do that.
  */
 class TraceContext
 {

@@ -18,11 +18,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Aliased, applied per-route in routes/api.php (api-key before
+        // usage-quota, since the quota check needs the tenant the key
+        // middleware resolves).
         $middleware->alias([
             'api-key' => AuthenticateApiKey::class,
             'usage-quota' => EnforceUsageQuota::class,
         ]);
 
+        // Applied to every request in the 'api' group, not per-route:
+        // appended first runs outermost, so TraceRequest's span wraps
+        // AttachTraceId and RecordRequestMetrics, including the 401/429
+        // cases the route-level middleware above rejects before the
+        // controller ever runs. See each middleware's own docblock for
+        // why this order matters.
         $middleware->appendToGroup('api', TraceRequest::class);
         $middleware->appendToGroup('api', AttachTraceId::class);
         $middleware->appendToGroup('api', RecordRequestMetrics::class);

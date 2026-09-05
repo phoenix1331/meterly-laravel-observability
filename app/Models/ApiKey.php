@@ -12,6 +12,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
+/**
+ * A tenant's bearer token, stored the way Sanctum-style packages do:
+ * the raw secret is never persisted, only a SHA-256 hash (for lookup
+ * on every request in AuthenticateApiKey) and a short, non-secret
+ * prefix (safe to display in a UI so a tenant can tell keys apart).
+ * generateToken() is the only place the plaintext ever exists.
+ */
 #[Fillable(['tenant_id', 'name', 'prefix', 'hash', 'last_used_at', 'revoked_at'])]
 #[Hidden(['hash'])]
 class ApiKey extends Model

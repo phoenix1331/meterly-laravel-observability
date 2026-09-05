@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('tenants', function (Blueprint $table) {
             $table->id();
+            // restrictOnDelete, not cascade: a plan with active tenants
+            // shouldn't be deletable at all. Every other foreign key in
+            // this schema cascades because the child rows (usage events,
+            // API keys, ...) are meaningless without their parent tenant.
+            // A plan is different: tenants outlive it being editable.
             $table->foreignId('plan_id')->constrained()->restrictOnDelete();
             $table->string('name');
             $table->string('email')->unique();

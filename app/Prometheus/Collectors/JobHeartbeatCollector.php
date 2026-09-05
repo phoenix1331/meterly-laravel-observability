@@ -19,7 +19,7 @@ use Spatie\Prometheus\Facades\Prometheus;
  * never run (using a large sentinel). The underlying Prometheus client
  * has no way to remove a gauge's stored value for a given label set,
  * so a series that was once present but stops being set just freezes
- * at its last value instead of disappearing — an absent() alert would
+ * at its last value instead of disappearing, so an absent() alert would
  * never fire once a job had run at least once. Emitting unconditionally
  * avoids relying on that and keeps the metric a true "time since last
  * success" the whole time the app has been up.
