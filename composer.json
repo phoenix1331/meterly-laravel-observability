@@ -11,6 +11,10 @@
         "laravel/horizon": "^5.48",
         "laravel/octane": "^2.19",
         "laravel/tinker": "^3.0",
+        "open-telemetry/api": "^1.10",
+        "open-telemetry/exporter-otlp": "^1.4",
+        "open-telemetry/sdk": "^1.15",
+        "open-telemetry/sem-conv": "^1.38",
         "spatie/laravel-prometheus": "^1.6"
     },
     "require-dev": {

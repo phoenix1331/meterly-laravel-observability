@@ -4,6 +4,7 @@ use App\Http\Middleware\AttachTraceId;
 use App\Http\Middleware\AuthenticateApiKey;
 use App\Http\Middleware\EnforceUsageQuota;
 use App\Http\Middleware\RecordRequestMetrics;
+use App\Http\Middleware\TraceRequest;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'usage-quota' => EnforceUsageQuota::class,
         ]);
 
+        $middleware->appendToGroup('api', TraceRequest::class);
         $middleware->appendToGroup('api', AttachTraceId::class);
         $middleware->appendToGroup('api', RecordRequestMetrics::class);
     })

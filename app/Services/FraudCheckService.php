@@ -6,6 +6,9 @@ namespace App\Services;
 
 use App\Exceptions\FraudCheckFailedException;
 use App\Models\Tenant;
+use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\API\Trace\StatusCode;
+use OpenTelemetry\API\Trace\TracerInterface;
 
 /**
  * Stands in for a third-party fraud-check API called before a usage
@@ -15,20 +18,41 @@ use App\Models\Tenant;
  */
 class FraudCheckService
 {
+    public function __construct(
+        private readonly TracerInterface $tracer,
+    ) {}
+
     public function check(Tenant $tenant): bool
     {
-        $latencyMs = config('services.fraud_check.latency_ms');
+        $span = $this->tracer->spanBuilder('fraud-check.check')
+            ->setSpanKind(SpanKind::KIND_CLIENT)
+            ->setAttribute('tenant.id', $tenant->id)
+            ->startSpan();
 
-        if ($latencyMs > 0) {
-            usleep($latencyMs * 1_000);
+        $scope = $span->activate();
+
+        try {
+            $latencyMs = config('services.fraud_check.latency_ms');
+
+            if ($latencyMs > 0) {
+                usleep($latencyMs * 1_000);
+            }
+
+            $errorRate = config('services.fraud_check.error_rate');
+
+            if ($errorRate > 0 && (mt_rand() / mt_getrandmax()) < $errorRate) {
+                $exception = new FraudCheckFailedException("Fraud check failed for tenant {$tenant->id}.");
+
+                $span->recordException($exception);
+                $span->setStatus(StatusCode::STATUS_ERROR, $exception->getMessage());
+
+                throw $exception;
+            }
+
+            return true;
+        } finally {
+            $scope->detach();
+            $span->end();
         }
-
-        $errorRate = config('services.fraud_check.error_rate');
-
-        if ($errorRate > 0 && (mt_rand() / mt_getrandmax()) < $errorRate) {
-            throw new FraudCheckFailedException("Fraud check failed for tenant {$tenant->id}.");
-        }
-
-        return true;
     }
 }
