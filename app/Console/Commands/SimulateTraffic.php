@@ -24,8 +24,8 @@ use Illuminate\Support\Facades\Http;
     {--duration=600 : Total run time in seconds}
     {--cycle=300 : Length of one full diurnal cycle in seconds}
     {--peak-rps=5 : Requests per second at the peak of the cycle}
-    {--incident-at=300 : Seconds into the run when the scripted incident starts}
-    {--incident-duration=60 : How long the scripted incident lasts, in seconds}
+    {--incident-at=120 : Seconds into the run when the scripted incident starts}
+    {--incident-duration=180 : How long the scripted incident lasts, in seconds. Must comfortably exceed the alert rule\'s "for" duration (2m), since the alert only fires once the error rate has been sustained that long}
     {--base-url= : Base URL of the app, defaults to APP_URL}')]
 #[Description('Simulate diurnal traffic against the metered endpoint, with one scripted incident')]
 class SimulateTraffic extends Command

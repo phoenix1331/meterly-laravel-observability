@@ -40,4 +40,4 @@ demo: ## bring up the stack, migrate, seed, and start the traffic simulator
 	@docker compose exec -d app php artisan app:simulate-traffic
 	@echo "demo stack is up: http://localhost:8000"
 	@echo "grafana: http://localhost:3000"
-	@echo "traffic simulator running in the background (10 minutes, one scripted incident at 5 minutes)"
+	@echo "traffic simulator running in the background (10 minutes, one scripted incident at 2 minutes)"
