@@ -1,1 +1,35 @@
-groups: []
+groups:
+  - name: meterly
+    rules:
+      - alert: HighUsageEndpointErrorRate
+        expr: |
+          sum(rate(app_http_requests_total{route="api/usage",status=~"5.."}[5m]))
+          /
+          sum(rate(app_http_requests_total{route="api/usage"}[5m]))
+          > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elevated server error rate on the metered endpoint"
+          description: >-
+            More than 10% of requests to /api/usage have returned a 5xx
+            response over the last 5 minutes, sustained for 2 minutes.
+            Check the fraud-check dependency and recent traces for the
+            failing requests.
+
+      - alert: UsageAggregationJobStale
+        expr: |
+          app_job_heartbeat_seconds_since_success{job_name="usage_aggregation"} > 93600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Usage aggregation job has not succeeded in over 26 hours"
+          description: >-
+            The usage aggregation job runs daily at 00:05 but has not
+            completed successfully in over 26 hours (or has never
+            completed at all). This is the "billing close silently does
+            not run" failure mode: nothing is actively failing, the job
+            has just stopped happening. Check the scheduler container
+            and Horizon.

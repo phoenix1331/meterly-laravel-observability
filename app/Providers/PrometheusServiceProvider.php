@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Prometheus\Collectors\JobHeartbeatCollector;
 use App\Prometheus\Collectors\PlanMixCollector;
 use App\Prometheus\Collectors\QuotaBurnCollector;
 use App\Prometheus\Collectors\RevenueRateCollector;
@@ -83,6 +84,7 @@ class PrometheusServiceProvider extends ServiceProvider
             QuotaBurnCollector::class,
             PlanMixCollector::class,
             RevenueRateCollector::class,
+            JobHeartbeatCollector::class,
         ]);
 
         return $this;

@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Models\Tenant;
 use App\Models\UsageAggregate;
 use App\Models\UsageEvent;
+use App\Support\JobHeartbeat;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
@@ -16,6 +17,8 @@ use OpenTelemetry\API\Trace\TracerInterface;
 class AggregateUsageEvents implements ShouldQueue
 {
     use Queueable;
+
+    public const HEARTBEAT_NAME = 'usage_aggregation';
 
     /**
      * Create a new job instance.
@@ -29,7 +32,7 @@ class AggregateUsageEvents implements ShouldQueue
      * Upserts on (tenant_id, date), so re-running for the same
      * day recomputes rather than double-counts.
      */
-    public function handle(TracerInterface $tracer): void
+    public function handle(TracerInterface $tracer, JobHeartbeat $heartbeat): void
     {
         $date = ($this->date ?? now())->startOfDay();
 
@@ -62,6 +65,8 @@ class AggregateUsageEvents implements ShouldQueue
                 });
 
             $span->setAttribute('aggregation.tenant_count', $tenantCount);
+
+            $heartbeat->recordSuccess(self::HEARTBEAT_NAME);
         } finally {
             $scope->detach();
             $span->end();
